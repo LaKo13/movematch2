@@ -1,0 +1,78 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(uuid())
+  email       String   @unique
+  password    String
+  name        String
+  userType    String   // 'customer' or 'mover'
+  companyName String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  moves      Move[]  @relation("CustomerMoves")
+  bids       Bid[]   @relation("MoverBids")
+}
+
+model Move {
+  id              String   @id @default(uuid())
+  customerId      String
+  status          String   // 'draft', 'pending', 'accepted', 'completed'
+  pickupDate      DateTime
+  flexibleDate    Boolean  @default(false)
+  pickupAddress   String
+  pickupCity      String
+  pickupState     String
+  pickupZip       String
+  dropoffAddress  String
+  dropoffCity     String
+  dropoffState    String
+  dropoffZip      String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  customer        User     @relation("CustomerMoves", fields: [customerId], references: [id])
+  inventory       Inventory[]
+  bids           Bid[]
+}
+
+model Inventory {
+  id              String   @id @default(uuid())
+  moveId          String
+  name            String
+  category        String
+  quantity        Int
+  description     String?
+  specialHandling String?
+  photos          String?  // Comma-separated URLs
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  move            Move     @relation(fields: [moveId], references: [id])
+}
+
+model Bid {
+  id               String   @id @default(uuid())
+  moveId           String
+  moverId          String
+  amount           Float
+  estimatedDuration String
+  message          String?
+  status           String   // 'pending', 'accepted', 'rejected'
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Relations
+  move             Move     @relation(fields: [moveId], references: [id])
+  mover            User     @relation("MoverBids", fields: [moverId], references: [id])
+}
